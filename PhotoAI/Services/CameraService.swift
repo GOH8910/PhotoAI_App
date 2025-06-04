@@ -15,6 +15,7 @@ class CameraService: NSObject, ObservableObject {
     
     @Published var previewLayer: AVCaptureVideoPreviewLayer?
     @Published var zoomFactor: CGFloat = 1.0
+    @Published var flashMode: AVCaptureDevice.FlashMode = .off
     
     override init() {
         super.init()
@@ -50,7 +51,28 @@ class CameraService: NSObject, ObservableObject {
             self.session.startRunning()
         }
     }
-        
+    func focus(at point: CGPoint) {
+        guard let device = AVCaptureDevice.default(for: .video),
+              device.isFocusPointOfInterestSupported,
+              device.isFocusModeSupported(.autoFocus),
+              let previewLayer = self.previewLayer else { return }
+
+        let focusPoint = previewLayer.captureDevicePointConverted(fromLayerPoint: point)
+
+        do {
+            try device.lockForConfiguration()
+            device.focusPointOfInterest = focusPoint
+            device.focusMode = .autoFocus
+            if device.isExposurePointOfInterestSupported {
+                device.exposurePointOfInterest = focusPoint
+                device.exposureMode = .autoExpose
+            }
+            device.unlockForConfiguration()
+        } catch {
+            print("⚠️ Failed to focus: \(error)")
+        }
+    }
+    
     func setZoom(factor: CGFloat) {
         guard let device = AVCaptureDevice.default(for: .video) else { return }
         do {
@@ -64,6 +86,7 @@ class CameraService: NSObject, ObservableObject {
     
     func capturePhoto() {
         let settings = AVCapturePhotoSettings()
+        settings.flashMode = flashMode
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
     
