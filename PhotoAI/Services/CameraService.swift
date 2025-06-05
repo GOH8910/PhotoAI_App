@@ -7,26 +7,37 @@
 
 import AVFoundation
 import UIKit
+import Vision
+import Combine
 
 class CameraService: NSObject, ObservableObject {
     public let session = AVCaptureSession()
     private let photoOutput = AVCapturePhotoOutput()
+    private let videoOutput = AVCaptureVideoDataOutput()
+    private let visionQueue = DispatchQueue(label: "visionQueue")
     private var deviceInput: AVCaptureDeviceInput?
     
     @Published var previewLayer: AVCaptureVideoPreviewLayer?
     @Published var zoomFactor: CGFloat = 1.0
     @Published var flashMode: AVCaptureDevice.FlashMode = .off
+    @Published var shotType: ShotType = .none
     
     override init() {
         super.init()
         configureSession()
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+            videoOutput.setSampleBufferDelegate(self, queue: visionQueue)
+            videoOutput.alwaysDiscardsLateVideoFrames = true
+            videoOutput.connection(with: .video)?.videoOrientation = .portrait
+        }
     }
     
     private func configureSession() {
         session.beginConfiguration()
         session.sessionPreset = .photo // Forces 4:3 resolution
         
-        // input
+        // Camera input
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: camera),
               session.canAddInput(input) else {
@@ -36,17 +47,33 @@ class CameraService: NSObject, ObservableObject {
         session.addInput(input)
         self.deviceInput = input
         
-        // output
+        // photo output
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
         }
+        
+        // Video output for live frame processing
+        videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
+        videoOutput.alwaysDiscardsLateVideoFrames = true
+        videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+        }
+        
+        // Set orientation
+        if let connection = videoOutput.connection(with: .video), connection.isVideoOrientationSupported {
+            connection.videoOrientation = .portrait
+        }
 
         session.commitConfiguration()
-
+        
+        // preview layer
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
         self.previewLayer = previewLayer
-
+        
+        // start sesh
         DispatchQueue.global(qos: .userInitiated).async {
             self.session.startRunning()
         }
@@ -116,6 +143,20 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
         } else {
             print("✅ Photo saved successfully!")
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+}
+
+extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
+    func captureOutput(_ output: AVCaptureOutput,
+                       didOutput sampleBuffer: CMSampleBuffer,
+                       from connection: AVCaptureConnection) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        HumanDetector.detectHuman(in: pixelBuffer) { [weak self] detectedType in
+            DispatchQueue.main.async {
+                self?.shotType = detectedType
+            }
         }
     }
 }

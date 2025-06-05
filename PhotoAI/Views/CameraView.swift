@@ -11,13 +11,20 @@ import AVFoundation
 struct CameraView: View {
     @StateObject private var cameraService = CameraService()
     @StateObject private var motionManager = MotionManager()
+    @StateObject private var viewModel: CameraViewModel
     @State private var zoomLevels: [CGFloat] = [1.0, 2.0, 3.0]
     @State private var zoomIndex = 0
     @State private var focusPoint: CGPoint = .zero
     @State private var showFocusRing: Bool = false
     @State private var showInstruction: Bool = true
     @State private var instructionText: String = "Center the object in the frame"
-
+    
+    init() {
+            let service = CameraService()
+            _cameraService = StateObject(wrappedValue: service)
+            _viewModel = StateObject(wrappedValue: CameraViewModel(cameraService: service))
+        }
+    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
@@ -52,8 +59,8 @@ struct CameraView: View {
                                         .animation(.easeOut(duration: 0.3), value: showFocusRing)
                                 }
                             if showInstruction {
-                                        InstructionOverlay(message: instructionText, isVisible: $showInstruction)
-                                    }
+                                InstructionOverlay(message: viewModel.frameState.instruction, isVisible: $showInstruction)
+                            }
                         }
                     }
                     // Flash Toggle Button
