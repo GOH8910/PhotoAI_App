@@ -15,6 +15,8 @@ struct CameraView: View {
     @State private var zoomIndex = 0
     @State private var focusPoint: CGPoint = .zero
     @State private var showFocusRing: Bool = false
+    @State private var showInstruction: Bool = true
+    @State private var instructionText: String = "Center the object in the frame"
 
     var body: some View {
         GeometryReader { geometry in
@@ -49,6 +51,9 @@ struct CameraView: View {
                                         .transition(.opacity)
                                         .animation(.easeOut(duration: 0.3), value: showFocusRing)
                                 }
+                            if showInstruction {
+                                        InstructionOverlay(message: instructionText, isVisible: $showInstruction)
+                                    }
                         }
                     }
                     // Flash Toggle Button
