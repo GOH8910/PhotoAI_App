@@ -2,6 +2,29 @@
 
 **PhotoAI** is an iOS camera app built entirely in Swift using SwiftUI and AVFoundation (for now). This project is currently **a work in progress** as I explore native camera development and lay the groundwork for future AI-powered photography assistance.
 
+
+---
+
+## Environment Setup
+
+This project is built using Swift and SwiftUI as a **native iOS app**, relying on Apple Vision frameworks. It is designed and compiled within **Xcode on macOS**.
+
+### ❌ No Docker (for now)
+
+Docker is not used at this stage because:
+
+- The app is **macOS/iOS-native** and depends on Apple's SDKs and the iOS simulator.
+- Xcode and SwiftUI require a macOS environment and cannot run or compile within Docker.
+
+### ✅ Docker (possibly in the future)
+
+If the project expands to include:
+- A custom machine learning backend
+- Image preprocessing pipelines
+- API services for analytics or model inference
+
+…then Dockerisation will be considered to support reproducibility and backend modularity.
+
 ---
 
 ## 🚧 Phase 1 Capabilities
