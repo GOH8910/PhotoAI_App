@@ -9,21 +9,21 @@
 
 This project is built using Swift and SwiftUI as a **native iOS app**, relying on Apple Vision frameworks. It is designed and compiled within **Xcode on macOS**.
 
-### ❌ No Docker (for now)
+### ❌ No Docker (Phase 1)
 
-Docker is not used at this stage because:
+After some research, Docker will not be used at this stage because:
 
 - The app is **macOS/iOS-native** and depends on Apple's SDKs and the iOS simulator.
 - Xcode and SwiftUI require a macOS environment and cannot run or compile within Docker.
 
-### ✅ Docker (possibly in the future)
+### ✅ Docker (Phase 2)
 
-If the project expands to include:
+When the project expands to include:
 - A custom machine learning backend
 - Image preprocessing pipelines
 - API services for analytics or model inference
 
-…then Dockerisation will be considered to support reproducibility and backend modularity.
+…then Dockerisation will be used to support reproducibility and backend modularity.
 
 ---
 
