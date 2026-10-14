@@ -32,7 +32,7 @@ enum CameraError: Error, Equatable, Sendable {
 
 /// Published by `CameraService`. `RootView` and `CameraBlockedView` switch on it.
 enum CameraState: Equatable, Sendable {
-    /// Before or during `start()`, including while the permission prompt is showing.
+    /// Before the first `start()` finishes, including while the permission prompt is showing.
     case idle
     /// Permission is denied or restricted.
     case unauthorized(CameraAuthorization)

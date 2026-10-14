@@ -10,8 +10,8 @@ struct RootView: View {
     @StateObject private var cameraService = CameraService()
 
     var body: some View {
-        // `.task` sits on a stable container, not on the switch, so it fires once
-        // rather than every time the branch changes.
+        // One start per window: this ZStack keeps its identity whichever branch shows.
+        // Later starts come only from Try Again.
         ZStack { content }
             .preferredColorScheme(.dark)
             .task { await cameraService.start() }

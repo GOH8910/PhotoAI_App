@@ -8,8 +8,7 @@ import Combine
 import os
 import UIKit
 
-/// Owns the capture session. Every session mutation happens on `sessionQueue`;
-/// every published change happens on the main thread.
+/// Owns the capture session.
 /// Session state is touched only on `sessionQueue`; published state and the control methods are main-thread only.
 /// `@unchecked Sendable` rests on that discipline, which the compiler cannot verify.
 final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
