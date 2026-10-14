@@ -178,12 +178,13 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     }
 
     func capturePhoto() {
-        let settings = AVCapturePhotoSettings()
-        if photoOutput.supportedFlashModes.contains(flashMode) {
-            settings.flashMode = flashMode
-        }
+        let requestedFlash = flashMode
         sessionQueue.async { [weak self] in
             guard let self, self.session.isRunning else { return }
+            let settings = AVCapturePhotoSettings()
+            if self.photoOutput.supportedFlashModes.contains(requestedFlash) {
+                settings.flashMode = requestedFlash
+            }
             self.photoOutput.capturePhoto(with: settings, delegate: self)
         }
     }

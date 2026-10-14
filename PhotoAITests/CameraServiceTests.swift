@@ -12,6 +12,12 @@ private final class Counter {
     var count = 0
 }
 
+/// Mutable status so a stub can change its answer after the prompt.
+private final class StatusBox {
+    var value: AVAuthorizationStatus
+    init(_ value: AVAuthorizationStatus) { self.value = value }
+}
+
 struct CameraServiceTests {
 
     private func makeService(
@@ -72,14 +78,24 @@ struct CameraServiceTests {
         #expect(service.state == .unavailable)
     }
 
-    @Test("Calling start twice is safe and does not re-prompt")
+    @Test("Calling start twice is safe and does not re-prompt once the answer is known")
     func startIsIdempotent() async {
         let counter = Counter()
-        let service = makeService(status: .notDetermined, grantsAccess: false, requestCounter: counter)
+        let status = StatusBox(.notDetermined)
+        let dependencies = CameraService.Dependencies(
+            authorizationStatus: { status.value },
+            requestAccess: {
+                counter.count += 1
+                status.value = .denied // iOS remembers the refusal
+                return false
+            },
+            backCamera: { nil }
+        )
+        let service = CameraService(dependencies: dependencies)
         await service.start()
         await service.start()
         #expect(service.state == .unauthorized(.denied))
-        #expect(counter.count == 2) // each start re-reads status; the point is no crash and a stable state
+        #expect(counter.count == 1)
     }
 
     @Test("The preview layer is bound to the service's session from init")
