@@ -37,4 +37,11 @@ struct CameraBlockedViewTests {
         #expect(CameraBlockedView.message(for: .unauthorized(.denied)).contains("Settings"))
         #expect(CameraBlockedView.message(for: .unavailable).contains("back camera"))
     }
+
+    @Test("Only a failed configuration offers Try Again")
+    func retryOnlyWhenFailed() {
+        #expect(CameraBlockedView.offersRetry(for: .failed(.cannotAddOutput)))
+        #expect(!CameraBlockedView.offersRetry(for: .unauthorized(.denied)))
+        #expect(!CameraBlockedView.offersRetry(for: .unavailable))
+    }
 }
