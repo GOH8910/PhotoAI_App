@@ -125,7 +125,14 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     private func addInputAndOutputs(camera: AVCaptureDevice) -> Result<Void, CameraError> {
         session.sessionPreset = .photo
 
-        guard let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) else {
+        let input: AVCaptureDeviceInput
+        do {
+            input = try AVCaptureDeviceInput(device: camera)
+        } catch {
+            logger.error("Device input failed: \(error.localizedDescription, privacy: .public)")
+            return .failure(.cannotAddInput)
+        }
+        guard session.canAddInput(input) else {
             return .failure(.cannotAddInput)
         }
         session.addInput(input)
