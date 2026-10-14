@@ -31,8 +31,8 @@ struct CameraView: View {
                 ZStack(alignment: .topTrailing) {
                     // Camera Preview (4:3 ratio) with grid
                     CameraFrame(aspectRatio: 3/4, showGrid: true) {
-                        if let previewLayer = cameraService.previewLayer {
-                            CameraPreview(previewLayer: previewLayer)
+                        ZStack {
+                            CameraPreview(previewLayer: cameraService.previewLayer)
                                 .aspectRatio(3/4, contentMode: .fit)
                                 .frame(width: UIScreen.main.bounds.width)
                                 .contentShape(Rectangle()) // Makes entire area tappable
@@ -95,7 +95,6 @@ struct CameraView: View {
                         let zoom = zoomLevels[index]
                         Button(action: {
                             zoomIndex = index
-                            cameraService.zoomFactor = zoom
                             cameraService.setZoom(factor: zoom)
                         }) {
                             Text(zoom == floor(zoom) ? "\(Int(zoom))x" : String(format: "%.1fx", zoom))
@@ -137,8 +136,8 @@ struct CameraView: View {
                 .padding(.bottom, 30)
             }
             .background(Color.black.edgesIgnoringSafeArea(.all))
-            .onAppear {
-                cameraService.startSession()
+            .task {
+                await cameraService.start()
             }
         }
     }

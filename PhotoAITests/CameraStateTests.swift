@@ -26,4 +26,9 @@ struct CameraStateTests {
         #expect(CameraState.failed(.cannotAddInput) != CameraState.failed(.cannotAddOutput))
         #expect(CameraState.unavailable != CameraState.running)
     }
+
+    @Test("An unknown future status fails closed to .denied")
+    func unknownStatusFailsClosed() {
+        #expect(CameraAuthorization(AVAuthorizationStatus(rawValue: 99)!) == .denied)
+    }
 }

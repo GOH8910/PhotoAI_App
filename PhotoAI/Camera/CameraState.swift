@@ -24,13 +24,15 @@ enum CameraAuthorization: Equatable, Sendable {
     }
 }
 
+/// Session configuration failures only. `CameraState.failed` carries these.
 enum CameraError: Error, Equatable, Sendable {
     case cannotAddInput
     case cannotAddOutput
 }
 
-/// What `RootView` switches on.
+/// Published by `CameraService`. `RootView` and `CameraBlockedView` switch on it.
 enum CameraState: Equatable, Sendable {
+    /// Before or during `start()`, including while the permission prompt is showing.
     case idle
     /// Permission is denied or restricted.
     case unauthorized(CameraAuthorization)
