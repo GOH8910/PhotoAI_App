@@ -10,7 +10,8 @@ import UIKit
 
 /// Owns the capture session. Every session mutation happens on `sessionQueue`;
 /// every published change happens on the main thread.
-/// `@unchecked Sendable` rests on that queue discipline, which the compiler cannot verify.
+/// Session state is touched only on `sessionQueue`; published state and the control methods are main-thread only.
+/// `@unchecked Sendable` rests on that discipline, which the compiler cannot verify.
 final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
 
     /// The system calls the service makes. Tests inject these to drive the
@@ -54,7 +55,7 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     // MARK: - Lifecycle
 
     /// Resolves permission, then hardware, configures once, and starts the session.
-    /// Safe to call again: a running session is left alone.
+    /// Safe to call again: a running session is left alone, and a failed configuration is rolled back so the retry is clean.
     @MainActor
     func start() async {
         if state == .running { return }
@@ -80,7 +81,7 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
         case .success:
             state = .running
         case .failure(let error):
-            logger.error("Camera session failed: \(String(describing: error))")
+            logger.error("Camera session failed: \(String(describing: error), privacy: .public)")
             state = .failed(error)
         }
     }
@@ -106,11 +107,23 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     }
 
     /// Runs on `sessionQueue`. Every path commits, so the session is never left
-    /// between `beginConfiguration` and `commitConfiguration`.
+    /// between `beginConfiguration` and `commitConfiguration`. A failure leaves
+    /// nothing half-attached, so a retry fails or succeeds for the real reason.
     private func configure(camera: AVCaptureDevice) -> Result<Void, CameraError> {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
 
+        let result = addInputAndOutputs(camera: camera)
+        if case .failure = result {
+            for input in session.inputs { session.removeInput(input) }
+            for output in session.outputs { session.removeOutput(output) }
+            deviceInput = nil
+        }
+        return result
+    }
+
+    /// Runs on `sessionQueue`, inside `configure`'s begin/commit pair.
+    private func addInputAndOutputs(camera: AVCaptureDevice) -> Result<Void, CameraError> {
         session.sessionPreset = .photo
 
         guard let input = try? AVCaptureDeviceInput(device: camera), session.canAddInput(input) else {
@@ -141,6 +154,7 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     // MARK: - Controls
 
     /// `layerPoint` is in the preview layer's coordinate space. Call on the main thread.
+    @MainActor
     func focus(at layerPoint: CGPoint) {
         let devicePoint = previewLayer.captureDevicePointConverted(fromLayerPoint: layerPoint)
         sessionQueue.async { [weak self] in
@@ -157,11 +171,12 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
                     device.exposureMode = .autoExpose
                 }
             } catch {
-                self.logger.error("Focus failed: \(error.localizedDescription)")
+                self.logger.error("Focus failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
 
+    @MainActor
     func setZoom(factor: CGFloat) {
         sessionQueue.async { [weak self] in
             guard let self, let device = self.deviceInput?.device else { return }
@@ -172,15 +187,20 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
                 device.unlockForConfiguration()
                 DispatchQueue.main.async { self.zoomFactor = clamped }
             } catch {
-                self.logger.error("Zoom failed: \(error.localizedDescription)")
+                self.logger.error("Zoom failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
 
+    @MainActor
     func capturePhoto() {
         let requestedFlash = flashMode
         sessionQueue.async { [weak self] in
-            guard let self, self.session.isRunning else { return }
+            guard let self else { return }
+            guard self.session.isRunning else {
+                self.logger.debug("Capture ignored: session not running")
+                return
+            }
             let settings = AVCapturePhotoSettings()
             if self.photoOutput.supportedFlashModes.contains(requestedFlash) {
                 settings.flashMode = requestedFlash
@@ -195,7 +215,7 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
 extension CameraService: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         if let error {
-            logger.error("Capture failed: \(error.localizedDescription)")
+            logger.error("Capture failed: \(error.localizedDescription, privacy: .public)")
             return
         }
         guard let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
@@ -205,9 +225,9 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
         UIImageWriteToSavedPhotosAlbum(image, self, #selector(image(_:didFinishSavingWithError:contextInfo:)), nil)
     }
 
-    @objc private func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
+    @objc private func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeMutableRawPointer?) {
         if let error {
-            logger.error("Save failed: \(error.localizedDescription)")
+            logger.error("Save failed: \(error.localizedDescription, privacy: .public)")
             return
         }
         DispatchQueue.main.async {
@@ -222,7 +242,10 @@ extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         HumanDetector.detectHuman(in: pixelBuffer) { [weak self] detected in
-            DispatchQueue.main.async { self?.shotType = detected }
+            DispatchQueue.main.async {
+                guard let self, self.shotType != detected else { return }
+                self.shotType = detected
+            }
         }
     }
 }

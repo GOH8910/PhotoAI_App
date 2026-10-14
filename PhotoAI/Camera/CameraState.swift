@@ -38,6 +38,7 @@ enum CameraState: Equatable, Sendable {
     case unauthorized(CameraAuthorization)
     /// No back camera on this device (the simulator, for one).
     case unavailable
+    /// Configured and `startRunning()` returned. Interruptions and runtime errors are not tracked yet (Week 2).
     case running
     case failed(CameraError)
 }
