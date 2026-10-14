@@ -26,17 +26,17 @@ final class PhotoAIUITests: XCTestCase {
     func testSimulatorLaunchShowsNoCameraScreen() throws {
         #if targetEnvironment(simulator)
         let app = XCUIApplication()
-        // A camera-permission alert, if the simulator shows one, must not block the assertion.
-        addUIInterruptionMonitor(withDescription: "Camera permission") { alert in
-            let allow = alert.buttons.allElementsBoundByIndex.first { $0.label.hasPrefix("Allow") || $0.label == "OK" }
-            allow?.tap()
-            return allow != nil
-        }
+        // Simulator clones inherit the base device's camera answer, so start from "not asked" every run.
+        app.resetAuthorizationStatus(for: .camera)
         app.launch()
-        app.tap() // interruption monitors only fire on the next interaction
+
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.buttons["Allow"]
+        XCTAssertTrue(allow.waitForExistence(timeout: 10), "The first launch should ask for the camera")
+        allow.tap()
+
         XCTAssertTrue(
             app.staticTexts["No camera on this device"].waitForExistence(timeout: 10),
-            "RootView should show the blocked screen on a camera-less simulator"
+            "With access allowed, a camera-less simulator should show the no-camera screen"
         )
         #else
         throw XCTSkip("Only meaningful on the simulator, which has no back camera")
