@@ -23,12 +23,24 @@ final class PhotoAIUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testSimulatorLaunchShowsNoCameraScreen() throws {
+        #if targetEnvironment(simulator)
         let app = XCUIApplication()
+        // A camera-permission alert, if the simulator shows one, must not block the assertion.
+        addUIInterruptionMonitor(withDescription: "Camera permission") { alert in
+            let allow = alert.buttons.allElementsBoundByIndex.first { $0.label.hasPrefix("Allow") || $0.label == "OK" }
+            allow?.tap()
+            return allow != nil
+        }
         app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        app.tap() // interruption monitors only fire on the next interaction
+        XCTAssertTrue(
+            app.staticTexts["No camera on this device"].waitForExistence(timeout: 10),
+            "RootView should show the blocked screen on a camera-less simulator"
+        )
+        #else
+        throw XCTSkip("Only meaningful on the simulator, which has no back camera")
+        #endif
     }
 
     @MainActor
