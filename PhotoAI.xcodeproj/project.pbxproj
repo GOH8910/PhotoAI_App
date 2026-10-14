@@ -27,8 +27,6 @@
 		DD14E7C62DE9F80200A1D098 /* PhotoAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD14E7D32DE9F80300A1D098 /* PhotoAITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoAITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD14E7DD2DE9F80300A1D098 /* PhotoAIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoAIUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		DD14E80F2DED1E9900A1D098 /* PhotoAI.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = PhotoAI.xcodeproj; sourceTree = "<group>"; };
-		DD7B09962DF5217B00335322 /* PhotoAI.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = PhotoAI.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -91,16 +89,6 @@
 				DD14E7D32DE9F80300A1D098 /* PhotoAITests.xctest */,
 				DD14E7DD2DE9F80300A1D098 /* PhotoAIUITests.xctest */,
 			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		DD14E8112DED1E9900A1D098 /* Products */ = {
-			isa = PBXGroup;
-			name = Products;
-			sourceTree = "<group>";
-		};
-		DD7B09982DF5217B00335322 /* Products */ = {
-			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -210,16 +198,6 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DD14E7C72DE9F80200A1D098 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = DD14E8112DED1E9900A1D098 /* Products */;
-					ProjectRef = DD14E80F2DED1E9900A1D098 /* PhotoAI.xcodeproj */;
-				},
-				{
-					ProductGroup = DD7B09982DF5217B00335322 /* Products */;
-					ProjectRef = DD7B09962DF5217B00335322 /* PhotoAI.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				DD14E7C52DE9F80200A1D098 /* PhotoAI */,
