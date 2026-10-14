@@ -2,8 +2,6 @@
 //  PhotoAIApp.swift
 //  PhotoAI
 //
-//  Created by Edward Goh on 30/05/2025.
-//
 
 import SwiftUI
 
@@ -11,7 +9,7 @@ import SwiftUI
 struct PhotoAIApp: App {
     var body: some Scene {
         WindowGroup {
-            CameraView()
+            RootView()
         }
     }
 }
